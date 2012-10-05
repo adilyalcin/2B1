@@ -1,10 +1,16 @@
 // Display related data
 int window_Height = 800;
 int window_Width = 700;
-
+float powered = 0; 
+float pTime;
 int lastElapsedTime;
-
+boolean beInvincible = false;
 int[] playArea = {50,750,160,650};
+long start;
+long elapsedTime2; 
+// Do something ...
+
+// Get elapsed time in milliseconds
 
 float remLevelTime;
 float speedLim = 0.5;
@@ -20,6 +26,7 @@ ArrayList<Rock> rocks;
 PImage imgRock1,imgRock2,imgRock3;
 // Carrots
 ArrayList<Carrot> carrots;
+ArrayList<PowerUp> powerups; 
 PImage imgCarrot;
 // Wolves
 ArrayList<Wolf> wolves;
@@ -70,6 +77,10 @@ void resetLevel(int levelNo){
 		wolves.add(new Wolf(getRandX(), getRandY()));
 	}
 	
+powerups.clear();
+for(int i=0 ; i<4; i++){
+		powerups.add(new PowerUp(getRandX(), getRandY(), i));
+	}
 	// set player starting position
 	float playerX = getRandX();
 	float playerY = getRandY();
@@ -77,6 +88,7 @@ void resetLevel(int levelNo){
 //	home.setPosition(playerX, playerY);
 	
 	// TODO: Make sure carrots/ wolves / rocks do not intersect!
+pTime = 1000;
 
 	lastElapsedTime = millis();
 	remLevelTime = 60000; // 60 sec
@@ -84,6 +96,8 @@ void resetLevel(int levelNo){
 
 void setup(){
 	// setup display
+start = millis();
+
 	size(window_Height,window_Width);
 	smooth();
 	imageMode(CENTER);
@@ -100,6 +114,7 @@ void setup(){
 	imgHome = loadImage("bunny3.png");
 
 	// setup game elements
+        powerups= new ArrayList();
 	rocks = new ArrayList();
 	carrots = new ArrayList();
 	bunny = new Bunny();
@@ -135,14 +150,25 @@ void timestep(int msec){
 			c.eaten = true;
 		}
 	}
+for(PowerUp p: powerups) {
+		// use simple absolute distance
+		if(sq(p.xpos-bunny.xpos)+sq(p.ypos-bunny.ypos)<1000){
+		//	p.eaten = true;
+                        p.moveP(p.getPower());
+                        p.setTrue();
+		}
+	}
+
 	// see if bunny gets eaten
 	for(Wolf w: wolves) {
 		// use simple absolute distance
-		if(sq(w.xpos-bunny.xpos)+sq(w.ypos-bunny.ypos)<1300){
+if (!beInvincible){	
+	if(sq(w.xpos-bunny.xpos)+sq(w.ypos-bunny.ypos)<1300){
 			resetLevel(1); return;
 		}
 	}
 	
+}
 /*	for (Iterator<Prize> iter = prizes.iterator(); iter.hasNext(); ) {
 		Prize p = iter.next();
 		if (abs(p.xpos - sh.getX())  < 70 && abs (p.ypos - sh.getY()) <30) {
@@ -164,6 +190,7 @@ void draw(){
 		// game over... TODO
 		remLevelTime = 0;
 	}
+
 	
 	// ********************************************************
 	// draw header
@@ -172,6 +199,7 @@ void draw(){
 	textFont(font);
 	int remCarrot = 0;
 	for(Carrot c: carrots) { if(c.eaten==false) remCarrot++; }
+//for(PowerUp p: powerups) { if(p.eaten==true) ; p.moveP(p.getPower()); }
 	text(""+remCarrot, 10, 50);
 		// draw remaining time rectangle
 		pushMatrix();
@@ -181,6 +209,25 @@ void draw(){
 		if(remLevelTime>20000) fill(20,100,200); else fill(200,100,20);
 		rect(0,0,214*remLevelTime/60000,14);
 		popMatrix();
+//Power:
+
+              pushMatrix();
+		strokeWeight(2);
+		stroke(0);
+		translate(312, 44);
+		if(powered > 0) {fill(255,255,0); }
+
+if (powered > 0 && powered < 300){
+  
+  fill(200,100,20);
+
+}
+if (powered > 0){		
+rect(0,0,214*powered/1000,14);
+}
+powered = powered - 1; 		
+popMatrix();
+
 
 	// *********************************************************
 	// draw game objects
@@ -188,6 +235,7 @@ void draw(){
 	for(Rock r: rocks) r.draw();
 	for(Wolf w: wolves) w.draw();
 	for(Carrot c: carrots) { if(c.eaten==false) c.draw(); }
+for(PowerUp p: powerups) { if(p.eaten==false) p.draw(); }
 	bunny.draw();
 	/*
 	// Draw carrots
@@ -234,8 +282,39 @@ void keyPressed(){ // This function is called everytime a key is pressed.
 			case DOWN: bunny.SpeedY(0.01); break;
 			case LEFT: bunny.SpeedX(-0.01); break;
 			case RIGHT: bunny.SpeedX(0.01); break;
-		}
-	}
+                   //     case SHIFT: bunny.increaseSpeed(); break;    //power up - speed
+                    //    case ALT: for (Wolf wolf: wolves) wolf.freeze(); break;
+
+}
+
+}
+
+if (key == TAB){ //testing powers
+  for (PowerUp p: powerups){
+    if (p.active == true){
+      powered = 1000;
+      elapsedTime2 = millis()-start;
+    // println(start);
+   //  print(millis());  
+   
+      println (elapsedTime2);
+      
+      p.activate(p.getPower());
+  //    if (elapsedTime2 > 30000){
+     p.xpos = getRandX();
+     p. ypos = getRandY();
+   //   }
+     return;  
+    }
+   
+  
+  
+  
+}
+  
+ 
+}
+
 } // End of keyPressed()
 
 
@@ -467,6 +546,18 @@ class Bunny{
 		ySpeed *= pow(0.999,msec/3);
 		xSpeed *= pow(0.999,msec/3);
 	}
+    
+        void increaseSpeed(){
+         // int elapsedTime = millis();
+	  // elapsedTime-lastElapsedTime;
+          //println("hi");
+           xSpeed += .02;
+            ySpeed += .02; 
+          //  println(xSpeed);
+         //   println(ySpeed);
+      
+        }
+    
 	void SpeedX(float adj){ 
 		xSpeed +=adj; 
 		xSpeed = min(max(-speedLim,xSpeed),speedLim);
@@ -475,6 +566,8 @@ class Bunny{
 		ySpeed +=adj; 
 		ySpeed = min(max(-speedLim,ySpeed),speedLim);
 	}
+
+
 }
 
 class Wolf{
@@ -494,7 +587,24 @@ class Wolf{
 //		rotate(rot+TWO_PI/2);
 		image(imgWolf,0,0);
 		popMatrix();
-	}
+	
+}
+
+void decreaseSpeed(){
+ speed = .03; 
+  
+}
+
+
+void freeze(){
+  
+   //int s = second();
+ //while (s < second() + 5){ 
+  speed = 0;
+ //}
+//  delay(50000); 
+  
+}
 	void iter(int msec){
 		// randomly change direction
 		if(random(5000)<=msec){
@@ -530,3 +640,114 @@ class Carrot{
 	}
 	void draw()  { image(imgCarrot,xpos,ypos,202/8,550/8); }
 }
+
+
+class PowerUp{
+	float xpos, ypos, scalar;
+int power;
+color c; 
+boolean active;
+	
+	boolean eaten; // if eaten, becomes invisible and no longer eatable, I just didn't want to mess with object deletion :)
+	PowerUp(float x, float y, int p) { 
+		xpos = x; ypos = y;
+		eaten = false;
+active = false;
+power = p;
+ if (power == 0) { //freeze all wolves
+   c= color(100,0,0);
+
+  } else if (power == 1){ //slow speed of wolves
+ c = color(0,100,0);
+ 
+
+  }else if (power ==2){ //be invisible
+  c = color(0,0,100);
+
+
+  }  else if (power ==3){ //increase speed
+ // bunny.increaseSpeed(); 
+  
+   c = color(100, 0 , 100); 
+  }
+
+
+	}
+
+void moveP(int power){
+ if (power == 0) { //freeze all wolves
+  xpos = 550;
+ypos = 12; 
+  
+  } else if (power == 1){ //slow speed of wolves
+   xpos = 610;
+ypos = 12; 
+  }else if (power ==2){ //be invisible
+  xpos = 670;
+ypos = 12; 
+  } 
+  
+   else if (power ==3){ //increase speed
+  xpos = 730;
+ ypos = 12; 
+  
+    
+  }
+/* if 
+
+  */
+  
+}
+
+
+int getPower(){
+ return power;  
+  
+}
+
+void setTrue(){
+  
+  active = true;
+}
+	void draw()  { 
+  
+fill(c); 
+   
+  rect(xpos, ypos, 47,47);
+//image(imgCarrot,xpos,ypos,202/8,550/8); 
+}
+void activate(int power){
+  
+  if (power == 0) { //freeze all wolves
+
+   for (Wolf wolf: wolves){
+         wolf.freeze(); 
+       }
+
+  } else if (power == 1){ //slow speed of wolves
+  
+   for (Wolf wolf: wolves){
+         wolf.decreaseSpeed(); 
+       }
+
+  }else if (power ==2){ //be invisible
+  
+beInvincible = true; 
+
+  } else if (power ==3){ //increase speed
+  bunny.increaseSpeed(); 
+  
+    
+  }
+  
+  
+}
+
+}
+
+
+
+ 
+  
+  
+  
