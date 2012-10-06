@@ -1,4 +1,9 @@
-// Display related data
+ import processing.serial.*;
+ 
+ Serial player1; 
+ Serial player2;
+
+
 int window_Height = 800;
 int window_Width = 700;
 float powered = 0; 
@@ -35,32 +40,14 @@ PImage imgWolf;
 //Home home;
 PImage imgHome;
 
-/*
-Wolf[] ships;
-int num_balls = 5; 
-Carrot[] carrots = new Carrot[num_balls];
-//Prize[] prizes = new Prize[5];
-int score = 0;
-int num_prizes; 
-
-ArrayList<Prize> prizes = new ArrayList();
-int x;
-float[] scalars = {1,1,1,1,1,1,1,1,1,1};
-Ship sh;
-*/
 PFont font;
-
-void restart(){
-/*	sh = new Ship(200,300, 1);
-	for (int i = 0; i < num_balls; i++) {
-		carrots[i].drawCarrot();
-	}*/
-}
 
 float getRandX(){ return random(playArea[0],playArea[1]); }
 float getRandY(){ return random(playArea[2],playArea[3]); }
 
 void resetLevel(int levelNo){
+    bunny.xSpeed = 0;
+    bunny.ySpeed = 0;
 	// randomly spawn static rocks in the game
 	rocks.clear();
 	for(int i=0 ; i<50; i++){
@@ -87,14 +74,45 @@ for(int i=0 ; i<4; i++){
 	bunny.setPosition(playerX, playerY);
 //	home.setPosition(playerX, playerY);
 	
-	// TODO: Make sure carrots/ wolves / rocks do not intersect!
 pTime = 1000;
 
 	lastElapsedTime = millis();
 	remLevelTime = 60000; // 60 sec
 }
 
+void serialEvent (Serial myPort) {
+  boolean playerNo = (myPort==player1);
+  String inString = myPort.readStringUntil('\n');
+ 
+ float in = float(inString);
+ if (inString != null) {
+   if(playerNo==false && in==1){
+     bunny.SpeedY(-0.01); 
+   }
+   if(playerNo==false && in==2){
+     bunny.SpeedY(0.01); 
+   }
+   if(playerNo==true && in==1){
+     bunny.SpeedX(-0.01); 
+   }
+   if(playerNo==true && in==2){
+     bunny.SpeedX(0.01); 
+   }
+   println("playerNo:"+playerNo+" code:"+inString);
+ }
+}
+
 void setup(){
+ // List all the available serial ports
+ println(Serial.list());
+
+  player1 = new Serial(this, Serial.list()[4], 9600);
+  player2 = new Serial(this, Serial.list()[6], 9600);
+
+ // don't generate a serialEvent() unless you get a newline character:
+ player1.bufferUntil('\n');
+  player2.bufferUntil('\n'); 
+ 
 	// setup display
 start = millis();
 
@@ -119,21 +137,7 @@ start = millis();
 	carrots = new ArrayList();
 	bunny = new Bunny();
 	wolves = new ArrayList();
-/*	
-	for(int i=0;i<num_balls;i++){
-		carrots[i] = new Carrot(startX[i], startY[i],1); 
-	}
 
-	sh = new Ship(200,300, 1);
-	for (int i = 0; i < num_balls; i++) {
-		carrots[i].drawCarrot();
-	}
-
-	for(int i=0;i<num_prizes;i++){
-		Prize a = new Prize(startX[i], startY[i],1); 
-		prizes.add(a);
-	}
-*/
 	resetLevel(1);
 }
 
@@ -169,13 +173,6 @@ if (!beInvincible){
 	}
 	
 }
-/*	for (Iterator<Prize> iter = prizes.iterator(); iter.hasNext(); ) {
-		Prize p = iter.next();
-		if (abs(p.xpos - sh.getX())  < 70 && abs (p.ypos - sh.getY()) <30) {
-			iter.remove();
-			score++;
-		}
-	}*/
 }
 
 void draw(){
@@ -237,42 +234,6 @@ popMatrix();
 	for(Carrot c: carrots) { if(c.eaten==false) c.draw(); }
 for(PowerUp p: powerups) { if(p.eaten==false) p.draw(); }
 	bunny.draw();
-	/*
-	// Draw carrots
-	for (Prize b: prizes) b.draw();
-
-
-	for (int i = 0; i < num_balls; i++) {
-		carrots[i].update();
-	}
-
-	for (int i = 0; i < num_balls; i++) {
-		carrots[i].drawCarrot();
-		//if (abs(p.xpos - sh.getX())  < 70 && abs (p.ypos - sh.getY()) <30) {
-
-		if (abs(carrots[i].xpos - sh.locationX)  < 50 && abs (carrots[i].ypos - sh.locationY) <50) {
-		//println("BOOM"); 
-		//sh = null;
-		//lives--;
-		sh.shrink();
-
-		if (sh.getScalar()  < .7){
-		player_Lives--;
-		restart(); 
-
-		} 
-
-
-		//setup();
-		}else{
-		sh.drawShip();
-
-		}
-
-
-	}
-*/
-
 } // End of draw()
 
 void keyPressed(){ // This function is called everytime a key is pressed.
@@ -289,6 +250,9 @@ void keyPressed(){ // This function is called everytime a key is pressed.
 
 }
 
+
+
+
 if (key == TAB){ //testing powers
   for (PowerUp p: powerups){
     if (p.active == true){
@@ -297,7 +261,7 @@ if (key == TAB){ //testing powers
     // println(start);
    //  print(millis());  
    
-      println (elapsedTime2);
+//      println (elapsedTime2);
       
       p.activate(p.getPower());
   //    if (elapsedTime2 > 30000){
@@ -318,169 +282,6 @@ if (key == TAB){ //testing powers
 } // End of keyPressed()
 
 
-/*
-class Ship {
-  int speed = 10;
-  int locationX;
-  int locationY;
-  float scalar;
-  Ship(int x, int y, float scl) 
-  {
-    locationX = x;
-    locationY = y;
-    scalar = scl;
-  }
-  
-  void updateSpeed(){
-    
-    speed = speed + 60;
-  }
-  
-  float getScalar(){
-    
-    
-   return scalar; 
-    
-  }
-  
-  void shrink(){
-   scalar = scalar - .002; 
-    
-    
-  }
-  void drawShip() 
-  {
-    pushMatrix();
-    strokeWeight(2);
-    stroke(0);
-    scale(scalar,scalar);
-    translate(locationX,locationY);
-    fill(192,192,192);
-    ellipse(-50,-50,25,25);
-    fill(0,255,0);
-    ellipse(-50,-40,75,20);  
-    fill(0,0,0);
-    ellipse(-50,-33,35,10);
-    strokeWeight(2);
-    stroke(255,0,0);
-    popMatrix();
-  }
-  
-  
-  int getX(){
-    
-    return locationX;
-  }
-  
-  int getY(){
-    
-    return locationY;
-    
-  }
-  void moveUP()
-  {
-    locationY = locationY-speed;
-  }
-  void moveDOWN()
-  {
-    locationY = locationY + speed;
-  }    
-  void moveLEFT()
-  {
-    locationX = locationX- speed;
-  }    
-  void moveRIGHT()
-  {
-    locationX = locationX + speed;
-  }    
-} // End class Ship
-
-
-
-class Carrot {
-  float xpos, ypos;
-  int rad = 50;  
-  float scalar;
-
-float xspeed = 1.8;  // Speed of the shape
-float yspeed = 1.2;  // Speed of the shape
-
-int xdirection = 1;  // Left or Right
-int ydirection = 1;  // Top to Bottom
-
-
-
-  Carrot(float x, float y, float scl) 
-  {
-    xpos = x;
-    ypos = y;
-    scalar = scl;
-  }
-  
-  
-  void drawCarrot() 
-  {
-    pushMatrix();
-    strokeWeight(2);
-    stroke(0);
-    scale(scalar,scalar);
-    translate(xpos, ypos);
-    fill(0);
-    ellipse(0,0,rad,rad);
-    popMatrix();
-  }
- 
- 
- 
- void update(){
-  xpos = xpos + ( xspeed * xdirection );
-  ypos = ypos + ( yspeed * ydirection );
-  
-  // Test to see if the shape exceeds the boundaries of the screen
-  // If it does, reverse its direction by multiplying by -1
-  if (xpos > width-rad || xpos < rad) {
-    xdirection *= -1;
-  }
-  if (ypos > height-rad || ypos < rad) {
-    ydirection *= -1;
-  }  
-
-   
- }
-} 
- 
-
-class Prize{
-  float xpos, ypos, scalar;
-
-
-  Prize(float x, float y, float scl) 
-  {
-    xpos = x;
-    ypos = y;
-    scalar = scl;
-  }
-  
-  
-  void draw() 
-  {
-    pushMatrix();
-    strokeWeight(2);
-    stroke(0);
-    scale(scalar,scalar);
-    translate(xpos, ypos);
-    fill(20,100,200);
-rect(0,0,20,20);
-    
-    //ellipse(0,0,rad,rad);
-    popMatrix();
-  }
- 
- 
-
-} 
-
-*/
 // there are 3 types of rocks:
 // 1) Solid square
 // 2) Jumpable rock with powerup
