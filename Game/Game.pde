@@ -135,10 +135,10 @@ void serialEvent (Serial myPort) {
 }
 
 /*in order to activate locks*/
-/
+
 if (inString != null){
   
- if (in == 6){
+ if (in == 5){
  locked = true; // now you can choose a powerup  
    
    
@@ -545,7 +545,7 @@ if (powered < 1 && curr != null){
  
  powerUpActive = false;
   curr.reset();
-  
+    locked = false;
   curr.active = false;
   curr.permission = false;
 //   PowerUps.remove(curr);
