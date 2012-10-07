@@ -8,8 +8,14 @@ int window_Height = 800;
 int window_Width = 700;
 float powered = 0; 
 float pTime;
-int lastElapsedTime;
+float currTime = 0;
+int lastElapsedTime, lastElapsedTime2;
+boolean locked = false;
+
 boolean beInvincible = false;
+boolean reset = true;
+boolean increaseSpeed = false;
+boolean powerUpActive = false;
 int[] playArea = {50,750,160,650};
 long start;
 long elapsedTime2; 
@@ -24,7 +30,7 @@ PImage imgBack;
 
 // Player Data
 Bunny bunny;
-PImage imgBunny;
+PImage imgBunny, imgBunny2;
 
 // Rocks
 ArrayList<Rock> rocks;
@@ -40,15 +46,170 @@ PImage imgWolf;
 //Home home;
 PImage imgHome;
 
+/*
+Wolf[] ships;
+int num_balls = 5; 
+Carrot[] carrots = new Carrot[num_balls];
+//Prize[] prizes = new Prize[5];
+int score = 0;
+int num_prizes; 
+
+ArrayList<Prize> prizes = new ArrayList();
+int x;
+float[] scalars = {1,1,1,1,1,1,1,1,1,1};
+Ship sh;
+*/
 PFont font;
+
+void restart(){
+
+}
 
 float getRandX(){ return random(playArea[0],playArea[1]); }
 float getRandY(){ return random(playArea[2],playArea[3]); }
 
+
+
+
+
+
+
+
+
+void keyPressed(){
+if (key == BACKSPACE){ //resets level 
+
+  	resetLevel(1); 
+reset = true;
+return;
+  
+  
+}
+
+} // End of keyPressed()
+
+void serialEvent (Serial myPort) {
+  boolean playerNo = (myPort==player1);
+  String inString = myPort.readStringUntil('\n');
+ 
+ float in = float(inString);
+ 
+ if (!increaseSpeed){
+ if (inString != null) {
+   if(playerNo==false && in==1){
+     bunny.SpeedY(-0.01); 
+   }
+   if(playerNo==false && in==2){
+     bunny.SpeedY(0.01); 
+   }
+   if(playerNo==true && in==1){
+     bunny.SpeedX(-0.01); 
+   }
+   if(playerNo==true && in==2){
+     bunny.SpeedX(0.01); 
+   }
+   
+ 
+   println("playerNo:"+playerNo+" code:"+inString);
+ }
+ 
+}else{ //in case bunny is poweredup 
+  
+   if (inString != null) {
+   if(playerNo==false && in==1){
+     bunny.SpeedY(-0.025); 
+   }
+   if(playerNo==false && in==2){
+     bunny.SpeedY(0.025); 
+   }
+   if(playerNo==true && in==1){
+     bunny.SpeedX(-0.025); 
+   }
+   if(playerNo==true && in==2){
+     bunny.SpeedX(0.025); 
+   }
+  
+   } 
+  
+  
+}
+
+/*in order to activate locks*/
+/
+if (inString != null){
+  
+ if (in == 6){
+ locked = true; // now you can choose a powerup  
+   
+   
+ }
+ 
+ 
+}
+
+
+if (locked){
+if (inString != null){
+if (!powerUpActive){
+if (playerNo==true && in==3 ){ //testing powers
+ for (PowerUp p: powerups){
+    if (p.active == true && p.getPower() == 0){ //freeze
+      powered = 10000;
+      powerUpActive = true;
+  p.permission = true; 
+     return;  
+    } 
+}
+}
+
+if (playerNo==false && in==4 ){
+ for (PowerUp p: powerups){
+    if (p.active == true && p.getPower() == 1){ //slow
+      powered = 10000;
+      powerUpActive = true;
+  p.permission = true; 
+     return;  
+    } 
+}
+}
+
+
+if (playerNo==true && in== 3){
+ for (PowerUp p: powerups){
+    if (p.active == true && p.getPower() == 2){ //invisible
+      powered = 10000;
+      powerUpActive = true;
+  p.permission = true; 
+     return;  
+    } 
+}
+}
+
+
+if (playerNo==true && in==4){
+ for (PowerUp p: powerups){
+    if (p.active == true && p.getPower() == 3){ //increase speed
+      powered = 10000;
+      powerUpActive = true;
+  p.permission = true; 
+     return;  
+    } 
+}
+}
+}
+
+}
+
+}
+
+}
+
+
+
 void resetLevel(int levelNo){
-    bunny.xSpeed = 0;
-    bunny.ySpeed = 0;
 	// randomly spawn static rocks in the game
+
+powered = 0;
 	rocks.clear();
 	for(int i=0 ; i<50; i++){
 		rocks.add(new Rock(getRandX(), getRandY(),int(random(3))%3));
@@ -74,36 +235,16 @@ for(int i=0 ; i<4; i++){
 	bunny.setPosition(playerX, playerY);
 //	home.setPosition(playerX, playerY);
 	
+	// TODO: Make sure carrots/ wolves / rocks do not intersect!
 pTime = 1000;
 
 	lastElapsedTime = millis();
-	remLevelTime = 60000; // 60 sec
-}
-
-void serialEvent (Serial myPort) {
-  boolean playerNo = (myPort==player1);
-  String inString = myPort.readStringUntil('\n');
- 
- float in = float(inString);
- if (inString != null) {
-   if(playerNo==false && in==1){
-     bunny.SpeedY(-0.01); 
-   }
-   if(playerNo==false && in==2){
-     bunny.SpeedY(0.01); 
-   }
-   if(playerNo==true && in==1){
-     bunny.SpeedX(-0.01); 
-   }
-   if(playerNo==true && in==2){
-     bunny.SpeedX(0.01); 
-   }
-   println("playerNo:"+playerNo+" code:"+inString);
- }
+lastElapsedTime2 = millis();
+	remLevelTime = 120000; // 120 sec
 }
 
 void setup(){
- // List all the available serial ports
+   // List all the available serial ports
  println(Serial.list());
 
   player1 = new Serial(this, Serial.list()[4], 9600);
@@ -112,7 +253,9 @@ void setup(){
  // don't generate a serialEvent() unless you get a newline character:
  player1.bufferUntil('\n');
   player2.bufferUntil('\n'); 
- 
+  
+  
+  
 	// setup display
 start = millis();
 
@@ -128,6 +271,7 @@ start = millis();
 	imgRock3 = loadImage("rock4.png");
 	imgCarrot = loadImage("carrot.png");
 	imgBunny = loadImage("bunny3.png");
+	imgBunny2 = loadImage("bunny2.png");
 	imgWolf = loadImage("wolf.png");
 	imgHome = loadImage("bunny3.png");
 
@@ -139,6 +283,26 @@ start = millis();
 	wolves = new ArrayList();
 
 	resetLevel(1);
+/*
+int currTime = 0;
+font = loadFont("AppleSDGothicNeo-ExtraBold-32.vlw");
+while (currTime < currTime + 301){
+  if (currTime == 100){
+    text("1", 50,50);
+  }else if (currTime == 200){
+    text("2", 50,50);
+  }else if (currTime == 300){
+    text("3", 50,50);
+  }
+    
+    
+    
+  
+  
+ currTime++; 
+
+}
+*/
 }
 
 void timestep(int msec){
@@ -168,17 +332,99 @@ for(PowerUp p: powerups) {
 		// use simple absolute distance
 if (!beInvincible){	
 	if(sq(w.xpos-bunny.xpos)+sq(w.ypos-bunny.ypos)<1300){
-			resetLevel(1); return;
+			resetLevel(1); 
+reset = true;
+return;
 		}
 	}
 	
 }
-}
 
+}
+PowerUp curr;
+
+void in_reset(){
+  
+  if (reset){
+    beInvincible = true;
+  }else{
+    beInvincible = false;
+  }
+  
+}
 void draw(){
+  if (reset){
+  
+int elapsedTime = millis();
+	int timeDif = elapsedTime-lastElapsedTime;
+	timestep(timeDif);
+	lastElapsedTime = elapsedTime;
+	background(imgBack);
+	
+	
+
+	
+	// ********************************************************
+	// draw header
+	
+		// Print remaning carrot count
+	textFont(font);
+	int remCarrot = 0;
+	for(Carrot c: carrots) { if(c.eaten==false) remCarrot++; }
+//for(PowerUp p: powerups) { if(p.eaten==true) ; p.moveP(p.getPower()); }
+	text(""+remCarrot, 10, 50);
+		// draw remaining time rectangle
+		pushMatrix();
+		strokeWeight(2);
+		stroke(0);
+		translate(312, 12);
+		if(remLevelTime>20000) fill(20,100,200); else fill(200,100,20);
+		rect(0,0,214*remLevelTime/120000,14);
+		popMatrix();
+
+//	in_reset();
+
+/*
+for(Rock r: rocks) r.draw();
+//for(Wolf w: wolves) w.draw();
+	for(Carrot c: carrots) { if(c.eaten==false) c.draw(); }
+for(PowerUp p: powerups) { if(p.eaten==false) p.draw(); }
+bunny.draw();
+*/
+//tint(255,126);	
+      //background(0);
+    textSize(600);
+    fill(255);
+int posx = width/2 - 150;
+int posy =width/2 + 150;
+//textMode(CENTER);
+  if (currTime > 0 && currTime < 30){ //print 3
+    text("3", posx,posy);
+  }else if (currTime >  100 && currTime < 130){ //print 2
+    text("2", posx, posy);
+  }else if (currTime > 200 && currTime < 230){ //print 1
+    text("1", posx, posy);
+ reset = false;
+ currTime = 0;
+  }
+    
+    
+    
+
+  
+ currTime = currTime + 2; 
+
+  
+
+  // reset = false;
+}else{
+  noTint();
+  
 	int elapsedTime = millis();
 	int timeDif = elapsedTime-lastElapsedTime;
 	timestep(timeDif);
+
+
 	lastElapsedTime = elapsedTime;
 	background(imgBack);
 	
@@ -198,13 +444,28 @@ void draw(){
 	for(Carrot c: carrots) { if(c.eaten==false) remCarrot++; }
 //for(PowerUp p: powerups) { if(p.eaten==true) ; p.moveP(p.getPower()); }
 	text(""+remCarrot, 10, 50);
+if (remCarrot== 0){
+  
+  int posx = width/2 - 150;
+int posy =width/2;
+fill(0);
+    text("Congratulations! You Won!", posx, posy);
+    
+    resetLevel(1);
+    reset = true;
+    
+    
+}
+
+
+
 		// draw remaining time rectangle
 		pushMatrix();
 		strokeWeight(2);
 		stroke(0);
 		translate(312, 12);
 		if(remLevelTime>20000) fill(20,100,200); else fill(200,100,20);
-		rect(0,0,214*remLevelTime/60000,14);
+		rect(0,0,214*remLevelTime/120000,14);
 		popMatrix();
 //Power:
 
@@ -214,78 +475,121 @@ void draw(){
 		translate(312, 44);
 		if(powered > 0) {fill(255,255,0); }
 
+
+
+
+
+if (powered > 0){
+ 
+ 	
+  
+ for (PowerUp p: powerups){
+    if (p.active == true && p.permission == true){
+  curr = p;
+    }
+    
+     font = loadFont("AppleSDGothicNeo-ExtraBold-32.vlw");
+textFont(font);
+
+if (locked){
+  text("Locked", -100, 60); 
+  text("", -100,60);
+  text("Locked", -100, 60);   
+  text("", -100,60);
+}
+
+if (curr != null){
+fill(0);
+  if (curr.getPower() == 0){
+ 
+text("Power Up: Freeze Wolves", -100, 60); 
+}else if (curr.getPower() == 1){
+text("Power Up: Slow Down Wolves", -100, 60); 
+ }  else if (curr.getPower() == 2){
+text("Power Up: You Are Invincible", -100, 60); 
+ }else if (curr.getPower() == 3){
+text("Power Up: Increase Speed", -100, 60); 
+ }
+ }
+ }
+      curr.activate(curr.getPower());
+ println(curr.getPower());
+   
+   {fill(255,255,0); }
 if (powered > 0 && powered < 300){
   
   fill(200,100,20);
 
 }
-if (powered > 0){		
-rect(0,0,214*powered/1000,14);
+  
+
+   
+  rect(0,0,214*powered/10000,14);
 }
-powered = powered - 1; 		
+
+int elapsedTime2 = millis();
+	int timeDif2 = elapsedTime2-lastElapsedTime2;
+	timestep(timeDif2);
+
+
+	lastElapsedTime2 = elapsedTime2;
+	powered -= timeDif2;
+
+if (powered < 1 && curr != null){
+ if (curr.getPower() == 2){
+  beInvincible = false; 
+ }
+ if (curr.getPower() == 3){
+  increaseSpeed = false; 
+ }
+ 
+ powerUpActive = false;
+  curr.reset();
+  
+  curr.active = false;
+  curr.permission = false;
+//   PowerUps.remove(curr);
+}	
 popMatrix();
 
 
 	// *********************************************************
 	// draw game objects
-	
+	/*
 	for(Rock r: rocks) r.draw();
-	for(Wolf w: wolves) w.draw();
+
 	for(Carrot c: carrots) { if(c.eaten==false) c.draw(); }
 for(PowerUp p: powerups) { if(p.eaten==false) p.draw(); }
 	bunny.draw();
+
+
+*/
+
+}
+ for(Rock r: rocks) r.draw();
+
+	for(Carrot c: carrots) { if(c.eaten==false) c.draw(); }
+for(PowerUp p: powerups) { if(p.eaten==false) p.draw(); }
+bunny.draw();
+
+	for(Wolf w: wolves) {
+  w.draw();
+  println(w.speed);
+}
+ if (reset){
+ tint(255,126);
+ }else{
+   noTint();
+   
+ }
+ 
+
+ 
+ 
+
+
 } // End of draw()
 
-void keyPressed(){ // This function is called everytime a key is pressed.
-	if(key == CODED) {
-		switch(keyCode){
-			case UP: bunny.SpeedY(-0.01); break;
-			case DOWN: bunny.SpeedY(0.01); break;
-			case LEFT: bunny.SpeedX(-0.01); break;
-			case RIGHT: bunny.SpeedX(0.01); break;
-                   //     case SHIFT: bunny.increaseSpeed(); break;    //power up - speed
-                    //    case ALT: for (Wolf wolf: wolves) wolf.freeze(); break;
-
-}
-
-}
-
-
-
-
-if (key == TAB){ //testing powers
-  for (PowerUp p: powerups){
-    if (p.active == true){
-      powered = 1000;
-      elapsedTime2 = millis()-start;
-    // println(start);
-   //  print(millis());  
-   
-//      println (elapsedTime2);
-      
-      p.activate(p.getPower());
-  //    if (elapsedTime2 > 30000){
-     p.xpos = getRandX();
-     p. ypos = getRandY();
-   //   }
-     return;  
-    }
-   
-  
-  
-  
-}
-  
- 
-}
-
-} // End of keyPressed()
-
-
-// there are 3 types of rocks:
-// 1) Solid square
-// 2) Jumpable rock with powerup
-// 3) Jumpable rock with powerup
 
 class Rock{
 	float xpos, ypos, scalar;
@@ -321,6 +625,23 @@ class Bunny{
 		xSpeed = ySpeed = 0;
 		rot = 0;
 	}
+void invincibleBunny(){
+  pushMatrix();
+		translate(xpos,ypos);
+		scale(1.0/8);
+		rotate(getRotation(xSpeed,ySpeed));
+		image(imgBunny2,0,0);
+
+
+/*if (beInvincible){
+  
+  tint(255,126);	
+}else{
+  noTint();
+}*/
+		popMatrix();
+  
+}
 	void draw(){
 		pushMatrix();
 		translate(xpos,ypos);
@@ -352,8 +673,9 @@ class Bunny{
          // int elapsedTime = millis();
 	  // elapsedTime-lastElapsedTime;
           //println("hi");
-           xSpeed += .02;
-            ySpeed += .02; 
+          increaseSpeed = true;
+//           xSpeed += .02;
+  //          ySpeed += .02; 
           //  println(xSpeed);
          //   println(ySpeed);
       
@@ -378,7 +700,7 @@ class Wolf{
 	
 	Wolf(float x, float y){
 		xpos=x; ypos=y;
-		speed = 0.05;
+		speed = 0.04;
 		rot = random(0,TWO_PI);
 	}
 	void draw(){
@@ -392,7 +714,7 @@ class Wolf{
 }
 
 void decreaseSpeed(){
- speed = .03; 
+ speed = .02; 
   
 }
 
@@ -409,7 +731,7 @@ void freeze(){
 	void iter(int msec){
 		// randomly change direction
 		if(random(5000)<=msec){
-			rot = random(0,TWO_PI); speed = 0.05;
+			rot = random(0,TWO_PI); speed = 0.03;
 		}
 		float oldX = xpos;
 		float oldY = ypos;
@@ -421,12 +743,12 @@ void freeze(){
 		if(xpos<playArea[0]||xpos>playArea[1]){
 			xpos = oldX; xSpeed=0; 
 			// escape faster
-			rot = random(0,TWO_PI); speed = 0.10;
+			rot = random(0,TWO_PI); speed = 0.05;
 		}
 		if( ypos<playArea[2]||ypos	>playArea[3]){
 			ypos = oldY; ySpeed=0;
 			// escape faster
-			rot = random(0,TWO_PI); speed = 0.10;
+			rot = random(0,TWO_PI); speed = 0.07;
 		}
 	}
 }
@@ -447,12 +769,13 @@ class PowerUp{
 	float xpos, ypos, scalar;
 int power;
 color c; 
-boolean active;
+boolean active, permission;
 	
 	boolean eaten; // if eaten, becomes invisible and no longer eatable, I just didn't want to mess with object deletion :)
 	PowerUp(float x, float y, int p) { 
 		xpos = x; ypos = y;
 		eaten = false;
+permission = false;
 active = false;
 power = p;
  if (power == 0) { //freeze all wolves
@@ -499,7 +822,14 @@ ypos = 12;
   */
   
 }
-
+void reset(){
+ if (active == true){
+   xpos = getRandX();
+     ypos = getRandY(); 
+  
+ } 
+  
+}
 
 int getPower(){
  return power;  
@@ -532,7 +862,7 @@ void activate(int power){
        }
 
   }else if (power ==2){ //be invisible
-  
+ // bunny.invincibleBunny();
 beInvincible = true; 
 
   } else if (power ==3){ //increase speed
